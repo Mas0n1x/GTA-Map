@@ -1,0 +1,8 @@
+NEUE FEATURES:
+1. 25+ Icons (Polizei, Krankenhaus, Restaurant, Shop, etc.)
+2. Kategorien-System für Marker
+3. Verschiebbares Admin-Panel (Drag & Drop)
+4. Bezirke vollständig im Admin-Panel verwaltbar
+5. Bezirke als Polygone auf der Karte sichtbar
+6. Bezirke ein-/ausblendbar
+7. Erweiterte Marker-Verwaltung

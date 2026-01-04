@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Police Department - Ortskunde Karte</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="LSPD_Logo.png">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #2c3e50;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+            background: #84B2CE;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: linear-gradient(135deg, #37474f 0%, #263238 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+
+        .top-nav h1 {
+            color: white;
+            font-size: 22px;
+            margin: 0;
+            margin-right: 25px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 450px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input::placeholder {
+            color: #b0bec5;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-login-btn {
+            margin-left: auto;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+        }
+
+        .admin-login-btn:hover {
+            background: linear-gradient(135deg, #f44336 0%, #e53935 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+
+        .admin-login-btn:active {
+            transform: translateY(0);
+        }
+
+        .user-info {
+            margin-left: auto;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%);
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #ffa000 0%, #ff8f00 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Right Sidebar - Bezirke */
+        .bezirke-sidebar {
+            position: absolute;
+            top: 75px;
+            right: 10px;
+            width: 320px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.98) 100%);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
+            z-index: 1500;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .bezirke-header {
+            background: linear-gradient(135deg, #455a64 0%, #37474f 100%);
+            color: white;
+            padding: 18px 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(55, 71, 79, 0.3);
+        }
+
+        .bezirke-content {
+            padding: 20px;
+        }
+
+        .bezirk-category {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #455a64;
+        }
+
+        .bezirk-category h4 {
+            font-size: 15px;
+            color: #37474f;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .bezirk-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 6px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .bezirk-item:hover {
+            background: rgba(69, 90, 100, 0.08);
+        }
+
+        .bezirk-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #455a64;
+        }
+
+        .bezirk-item label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            flex: 1;
+            font-weight: 500;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            position: absolute;
+            top: 75px;
+            left: 10px;
+            background: linear-gradient(145deg, rgba(30, 30, 35, 0.96) 0%, rgba(20, 20, 25, 0.96) 100%);
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255, 82, 82, 0.2);
+            z-index: 1500;
+            width: 440px;
+            max-height: calc(100vh - 100px);
+            overflow: hidden;
+            border: 1px solid rgba(255, 82, 82, 0.25);
+            display: none;
+        }
+
+        .admin-panel-header {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            padding: 18px 24px;
+            border-radius: 16px 16px 0 0;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+            border-bottom: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        .admin-panel-header:active {
+            cursor: grabbing;
+        }
+
+        .admin-panel-header h3 {
+            margin: 0;
+            font-size: 19px;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .admin-panel-content {
+            padding: 24px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .admin-panel-content h4 {
+            color: #ff8a80;
+            margin: 28px 0 16px 0;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-size: 13px;
+        }
+
+        .admin-panel-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .admin-section {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-group input:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            border-color: rgba(255, 82, 82, 0.3);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ff5252;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 4px rgba(255, 82, 82, 0.15);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .btn-custom {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-custom:active {
+            transform: translateY(0);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: linear-gradient(135deg, #f44336 0%, #e53935 100%);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+
+        .btn-import:hover {
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #757575 0%, #616161 100%);
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: linear-gradient(135deg, #616161 0%, #424242 100%);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+        }
+
+        .marker-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 14px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #ff5252;
+            transition: all 0.3s ease;
+        }
+
+        .marker-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .marker-item h5 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #ff7675;
+            font-weight: 600;
+        }
+
+        .marker-item p {
+            font-size: 12px;
+            color: #b0b0b0;
+            margin: 4px 0;
+        }
+
+        .icon-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .icon-option {
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .icon-option::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            padding: 2px;
+            background: linear-gradient(135deg, transparent, rgba(255, 82, 82, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .icon-option:hover {
+            border-color: rgba(255, 82, 82, 0.4);
+            background: rgba(255, 82, 82, 0.1);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .icon-option:hover::before {
+            opacity: 1;
+        }
+
+        .icon-option.active {
+            border-color: #ff5252;
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.25) 0%, rgba(244, 67, 54, 0.15) 100%);
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(255, 82, 82, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .coords-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border: 1.5px solid rgba(255, 82, 82, 0.2);
+            color: #ff8a80;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .coords-display strong {
+            color: #fff;
+        }
+
+        /* Login Modal */
+        .modal-content {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(35, 35, 35, 0.98) 100%);
+            color: white;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 25px;
+        }
+
+        .modal-title {
+            color: #ff5252;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-body input {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 14px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-body input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: #ff5252;
+            box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.1);
+            outline: none;
+        }
+
+        /* Custom Leaflet Popup */
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(35, 35, 35, 0.98) 100%);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .leaflet-popup-content {
+            margin: 18px;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(26, 26, 26, 0.98);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        .popup-title {
+            color: #ff7675;
+            font-weight: 600;
+            font-size: 17px;
+            margin-bottom: 10px;
+        }
+
+        .popup-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        /* Scrollbar */
+        .bezirke-sidebar::-webkit-scrollbar,
+        .admin-panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .bezirke-sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .bezirke-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(69, 90, 100, 0.5);
+            border-radius: 4px;
+        }
+
+        .bezirke-sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(69, 90, 100, 0.7);
+        }
+
+        .admin-panel-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+
+        .admin-panel-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(255, 82, 82, 0.7) 0%, rgba(244, 67, 54, 0.7) 100%);
+            border-radius: 4px;
+        }
+
+        .admin-panel-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(255, 82, 82, 0.9) 0%, rgba(244, 67, 54, 0.9) 100%);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Permanente Marker-Labels - Kompakt und übersichtlich */
+        .marker-label-tooltip {
+            background: rgba(0, 0, 0, 0.75);
+            border: none;
+            border-radius: 3px;
+            color: white;
+            font-weight: 500;
+            font-size: 10px;
+            padding: 2px 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .marker-label-tooltip::before {
+            display: none !important;
+        }
+
+        .leaflet-tooltip-top:before {
+            display: none !important;
+        }
+
+        /* Bezirk-Labels kleiner und dezenter */
+        .district-label > div,
+        .road-label > div {
+            font-size: 11px !important;
+            padding: 2px 6px !important;
+            opacity: 0.85;
+        }
+
+        /* Kategorie-Header mit Toggle */
+        .bezirk-category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .bezirk-category-header h4 {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .category-toggle-btn {
+            background: linear-gradient(135deg, #455a64 0%, #37474f 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .category-toggle-btn:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+        }
+
+        .category-toggle-btn.all-hidden {
+            background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+        }
+
+        /* Leaflet Zoom Controls Styling */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(35, 35, 35, 0.95) 100%) !important;
+            border: 1px solid rgba(255, 82, 82, 0.3) !important;
+            color: white !important;
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 36px !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.2) 0%, rgba(244, 67, 54, 0.2) 100%) !important;
+            border-color: #ff5252 !important;
+            color: #ff5252 !important;
+        }
+
+        .leaflet-control-zoom a:first-child {
+            border-radius: 8px 8px 0 0 !important;
+        }
+
+        .leaflet-control-zoom a:last-child {
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+        }
+
+        /* Credit Text */
+        .credit-text {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.92) 0%, rgba(35, 35, 35, 0.92) 100%);
+            backdrop-filter: blur(12px);
+            color: rgba(255, 255, 255, 0.85);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 999;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 82, 82, 0.15);
+            pointer-events: none;
+        }
+
+        .credit-text .heart {
+            color: #ff5252;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <img src="LSPD_Logo.png" alt="LSPD Logo" style="height: 50px; margin-right: 15px; border-radius: 50%;">
+        <h1>Police Department - Ortskunde Karte</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Suche POI/Straße...">
+        </div>
+
+        <button onclick="showHiddenPointsModal()" style="margin-left: auto; padding: 10px 20px; background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%); color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 193, 7, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(255, 193, 7, 0.3)'">
+            <i class="fas fa-eye-slash"></i> Versteckte Punkte anzeigen
+        </button>
+
+        <div id="guestMode" style="margin-left: 15px;">
+            <button class="admin-login-btn" onclick="showLoginModal()">
+                Admin-Login
+            </button>
+        </div>
+
+        <div id="adminMode" class="user-info hidden" style="margin-left: 15px;">
+            <span>Admin</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Right Sidebar - Bezirke -->
+    <div class="bezirke-sidebar">
+        <div class="bezirke-header">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Bezirke & Kategorien</span>
+        </div>
+        <div class="bezirke-content" id="dynamicBezirkeList">
+            <p style="text-align: center; padding: 40px 20px; color: #666;">
+                <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                Keine Bezirke vorhanden.<br>
+                <small>Erstellen Sie Bezirke im Admin-Panel</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Admin Panel (Left) -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-panel-header" id="adminPanelHeader">
+            <h3><i class="fas fa-cog"></i> Admin Panel</h3>
+            <span style="font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500;">Verschiebbar</span>
+        </div>
+
+        <div class="admin-panel-content">
+            <div class="coords-display">
+                <div><strong>Koordinaten:</strong></div>
+                <div id="currentCoords">Klicken Sie auf die Karte</div>
+            </div>
+
+            <h4><i class="fas fa-map-pin"></i> Marker hinzufügen</h4>
+
+        <div class="form-group">
+            <label>Kategorie:</label>
+            <select id="markerCategory">
+                <option value="polizei">🚔 Polizei</option>
+                <option value="krankenhaus">🏥 Krankenhaus</option>
+                <option value="restaurant">🍽️ Restaurant</option>
+                <option value="shop">🏪 Shop</option>
+                <option value="garage">🔧 Garage</option>
+                <option value="park">🌳 Park</option>
+                <option value="regierung">🏛️ Regierung</option>
+                <option value="fraktion">⚔️ Fraktion</option>
+                <option value="immobilie">🏠 Immobilie</option>
+                <option value="sonstiges">📍 Sonstiges</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Icon auswählen:</label>
+            <div class="icon-picker" id="iconPicker">
+                <div class="icon-option active" data-icon="📍" title="Standard">📍</div>
+                <div class="icon-option" data-icon="🚔" title="Polizei">🚔</div>
+                <div class="icon-option" data-icon="🏥" title="Krankenhaus">🏥</div>
+                <div class="icon-option" data-icon="🍽️" title="Restaurant">🍽️</div>
+                <div class="icon-option" data-icon="🏪" title="Laden">🏪</div>
+                <div class="icon-option" data-icon="🏢" title="Gebäude">🏢</div>
+                <div class="icon-option" data-icon="🏦" title="Bank">🏦</div>
+                <div class="icon-option" data-icon="🏛️" title="Regierung">🏛️</div>
+                <div class="icon-option" data-icon="⛽" title="Tankstelle">⛽</div>
+                <div class="icon-option" data-icon="🚗" title="Auto">🚗</div>
+                <div class="icon-option" data-icon="🔧" title="Werkstatt">🔧</div>
+                <div class="icon-option" data-icon="🌳" title="Park">🌳</div>
+                <div class="icon-option" data-icon="🏠" title="Haus">🏠</div>
+                <div class="icon-option" data-icon="🏭" title="Fabrik">🏭</div>
+                <div class="icon-option" data-icon="✈️" title="Flughafen">✈️</div>
+                <div class="icon-option" data-icon="⚓" title="Hafen">⚓</div>
+                <div class="icon-option" data-icon="🎯" title="Treffpunkt">🎯</div>
+                <div class="icon-option" data-icon="⚔️" title="Kampf">⚔️</div>
+                <div class="icon-option" data-icon="💊" title="Apotheke">💊</div>
+                <div class="icon-option" data-icon="🎰" title="Casino">🎰</div>
+                <div class="icon-option" data-icon="🔫" title="Waffenladen">🔫</div>
+                <div class="icon-option" data-icon="👔" title="Kleidung">👔</div>
+                <div class="icon-option" data-icon="💈" title="Friseur">💈</div>
+                <div class="icon-option" data-icon="🕵️" title="Geheim">🕵️</div>
+                <div class="icon-option" data-icon="⭐" title="Wichtig">⭐</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Titel:</label>
+            <input type="text" id="markerTitle" placeholder="z.B. Mission Row PD">
+        </div>
+
+        <div class="form-group">
+            <label>Beschreibung:</label>
+            <textarea id="markerDescription" placeholder="Optionale Beschreibung"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="markerHidden" style="margin-right: 8px;">
+                <span>Versteckter Marker (Passwort erforderlich)</span>
+            </label>
+        </div>
+
+        <div class="form-group" id="hiddenPasswordGroup" style="display: none;">
+            <label>Passwort für versteckte Marker:</label>
+            <input type="password" id="markerPassword" placeholder="Passwort festlegen">
+            <small style="color: #888; display: block; margin-top: 5px;">
+                Dieses Passwort wird benötigt, um den Marker anzuzeigen
+            </small>
+        </div>
+
+        <button class="btn-custom btn-add" id="addMarkerBtn" onclick="toggleMarkerMode()">
+            <i class="fas fa-map-marker-alt"></i> Marker platzieren
+        </button>
+        <button class="btn-custom btn-export" id="confirmMarkerBtn" onclick="confirmMarker()" style="display: none;">
+            <i class="fas fa-check"></i> Marker bestätigen
+        </button>
+        <button class="btn-custom btn-clear" id="cancelMarkerBtn" onclick="cancelMarker()" style="display: none;">
+            <i class="fas fa-times"></i> Abbrechen
+        </button>
+        <button class="btn-custom btn-clear" onclick="clearAllMarkers()">
+            <i class="fas fa-trash"></i> Alle löschen
+        </button>
+
+        <h4><i class="fas fa-list"></i> Gespeicherte Marker (<span id="markerCount">0</span>)</h4>
+        <div id="markerList" style="margin-top: 10px;"></div>
+
+        <h4><i class="fas fa-download"></i> Import/Export</h4>
+        <button class="btn-custom btn-export" onclick="exportMarkers()">
+            <i class="fas fa-file-export"></i> Export
+        </button>
+        <button class="btn-custom btn-import" onclick="importMarkers()">
+            <i class="fas fa-file-import"></i> Import
+        </button>
+
+        <h4><i class="fas fa-map"></i> Bezirke verwalten</h4>
+        <div class="form-group">
+            <label>Bezirk-Name:</label>
+            <input type="text" id="districtName" placeholder="z.B. Downtown">
+        </div>
+        <div class="form-group">
+            <label>Farbe:</label>
+            <input type="color" id="districtColor" value="#ff0000" style="width: 100%; height: 40px;">
+        </div>
+        <button class="btn-custom btn-add" id="startDistrictBtn" onclick="startDrawingDistrict()">
+            <i class="fas fa-draw-polygon"></i> Bezirk zeichnen
+        </button>
+        <button class="btn-custom btn-export" id="finishDistrictBtn" onclick="finishDrawingDistrict()" style="display: none;">
+            <i class="fas fa-check"></i> Bezirk fertigstellen
+        </button>
+        <button class="btn-custom btn-clear" id="cancelDistrictBtn" onclick="cancelDrawingDistrict()" style="display: none;">
+            <i class="fas fa-times"></i> Abbrechen
+        </button>
+        <div id="districtList" style="margin-top: 10px;"></div>
+
+        <h4><i class="fas fa-road"></i> Straßen verwalten</h4>
+        <div class="form-group">
+            <label>Straßen-Name:</label>
+            <input type="text" id="roadName" placeholder="z.B. Route 68">
+        </div>
+        <div class="form-group">
+            <label>Farbe:</label>
+            <input type="color" id="roadColor" value="#0066ff" style="width: 100%; height: 40px;">
+        </div>
+        <div class="form-group">
+            <label>Breite:</label>
+            <input type="range" id="roadWidth" min="2" max="10" value="4" style="width: 100%;">
+            <span id="roadWidthValue" style="color: #888; font-size: 12px;">4px</span>
+        </div>
+        <button class="btn-custom btn-add" id="startRoadBtn" onclick="startDrawingRoad()">
+            <i class="fas fa-route"></i> Straße zeichnen
+        </button>
+        <button class="btn-custom btn-export" id="finishRoadBtn" onclick="finishDrawingRoad()" style="display: none;">
+            <i class="fas fa-check"></i> Straße fertigstellen
+        </button>
+        <button class="btn-custom btn-clear" id="cancelRoadBtn" onclick="cancelDrawingRoad()" style="display: none;">
+            <i class="fas fa-times"></i> Abbrechen
+        </button>
+        <div id="roadList" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Credit Text -->
+    <div class="credit-text">
+        Mit <span class="heart">❤️</span> von Tommy erstellt
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-lock"></i> Admin Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Passwort:</label>
+                        <input type="password" id="adminPassword" class="form-control" placeholder="Passwort eingeben">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-danger" onclick="login()">Anmelden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Versteckte Punkte Modal -->
+    <div class="modal fade" id="hiddenPointsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-eye-slash"></i> Versteckte Punkte anzeigen</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Passwort:</label>
+                        <input type="password" id="hiddenPointsPassword" class="form-control" placeholder="Passwort eingeben">
+                    </div>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px;">
+                        Die jeweilige Fraktion ist für die Dokumentation und Sicherstellung des Passworts selbst verantwortlich!
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" onclick="unlockHiddenPoints()">Freischalten</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguration
+        const ADMIN_PASSWORD = 'Leadership123!';
+        const API_URL = '';  // Leerer String für relative URLs (nutzt nginx reverse proxy)
+        let isAdminMode = false;
+        let selectedIcon = '📍';
+        let markers = [];
+        let markerObjects = [];
+        let map;
+        let unlockedPasswords = []; // Gespeicherte freigeschaltete Passwörter
+        let districts = []; // Bezirke
+        let districtLayers = []; // Bezirk-Polygone auf der Karte
+        let isDrawingDistrict = false;
+        let currentPolygon = null;
+        let isPlacingMarker = false;
+        let tempMarker = null;
+        let tempMarkerPosition = null;
+        let roads = []; // Straßen
+        let roadLayers = []; // Straßen-Polylines auf der Karte
+        let isDrawingRoad = false;
+        let roadPoints = [];
+        let currentPolyline = null;
+        let roadClickHandler = null;
+
+        // API Hilfsfunktionen
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                if (!response.ok) throw new Error('API Fehler');
+                return await response.json();
+            } catch (error) {
+                console.error('API Fehler:', error);
+                throw error;
+            }
+        }
+
+        // GTA 5 Map initialisieren
+        function initMap() {
+            const bounds = [[-3000, -3000], [3000, 3000]];
+
+            map = L.map('map', {
+                crs: L.CRS.Simple,
+                minZoom: 2,
+                maxZoom: 5,
+                zoom: 3,
+                center: [-170, 125],
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0,
+                zoomControl: false,
+                attributionControl: false
+            });
+
+            // Zoom Control rechts unten hinzufügen
+            L.control.zoom({
+                position: 'bottomright'
+            }).addTo(map);
+
+            // Tile Layer
+            L.tileLayer('https://karte.corleone.city/tiles/{z}/{x}/{y}.png', {
+                minZoom: 2,
+                maxZoom: 5,
+                noWrap: true,
+                bounds: bounds
+            }).addTo(map);
+
+            // Koordinaten bei Klick
+            map.on('click', function(e) {
+                if (isAdminMode) {
+                    const lat = Math.round(e.latlng.lat);
+                    const lng = Math.round(e.latlng.lng);
+                    document.getElementById('currentCoords').innerHTML =
+                        `Lat: ${lat}<br>Lng: ${lng}`;
+
+                    // Marker platzieren wenn im Platzierungsmodus
+                    if (isPlacingMarker) {
+                        placeMarkerAtPosition(e.latlng.lat, e.latlng.lng);
+                    }
+                }
+            });
+        }
+
+        // Login Modal anzeigen
+        function showLoginModal() {
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+        }
+
+        // Login
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdminMode = true;
+                document.getElementById('guestMode').classList.add('hidden');
+                document.getElementById('adminMode').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.add('active');
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                modal.hide();
+
+                alert('✅ Erfolgreich als Admin angemeldet!');
+            } else {
+                alert('❌ Falsches Passwort!');
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Möchten Sie sich wirklich abmelden?')) {
+                isAdminMode = false;
+                document.getElementById('guestMode').classList.remove('hidden');
+                document.getElementById('adminMode').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('active');
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+
+        // Versteckte Punkte Modal anzeigen
+        function showHiddenPointsModal() {
+            const modal = new bootstrap.Modal(document.getElementById('hiddenPointsModal'));
+            modal.show();
+        }
+
+        // Versteckte Punkte freischalten
+        function unlockHiddenPoints() {
+            const password = document.getElementById('hiddenPointsPassword').value;
+
+            if (!password) {
+                alert('❌ Bitte geben Sie ein Passwort ein!');
+                return;
+            }
+
+            // Prüfe ob Passwort zu einem versteckten Marker passt
+            const matchingMarkers = markers.filter(m => m.hidden && m.password === password);
+
+            if (matchingMarkers.length > 0) {
+                unlockedPasswords.push(password);
+
+                // ALLE nicht-versteckten Sachen ausblenden
+                hideAllNonHiddenItems();
+
+                // Zeige alle Marker mit diesem Passwort
+                matchingMarkers.forEach(m => {
+                    const existingMarker = markerObjects.find(mo => mo.id === m.id);
+                    if (!existingMarker) {
+                        createMarker(m);
+                    }
+                });
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('hiddenPointsModal'));
+                modal.hide();
+                document.getElementById('hiddenPointsPassword').value = '';
+
+                // Update Sidebar mit den neuen freigeschalteten Markern
+                updateBezirkeSidebar();
+
+                alert(`✅ ${matchingMarkers.length} versteckte Punkte freigeschaltet!\n\nAlle anderen Elemente wurden ausgeblendet.`);
+            } else {
+                alert('❌ Falsches Passwort! Keine Marker gefunden.');
+            }
+        }
+
+        // Alle nicht-versteckten Elemente ausblenden
+        function hideAllNonHiddenItems() {
+            // Alle Bezirke ausblenden
+            districts.forEach(d => {
+                const checkbox = document.getElementById(`district-${d.id}`);
+                if (checkbox) checkbox.checked = false;
+                toggleDistrict(d.id, false);
+            });
+            categoryVisibility['cat-districts'] = false;
+
+            // Alle Straßen ausblenden
+            roads.forEach(r => {
+                const checkbox = document.getElementById(`road-${r.id}`);
+                if (checkbox) checkbox.checked = false;
+                toggleRoadVisibility(r.id, false);
+            });
+            categoryVisibility['cat-roads'] = false;
+
+            // Alle nicht-versteckten Marker ausblenden
+            markers.forEach(m => {
+                if (!m.hidden) {
+                    const checkbox = document.getElementById(`marker-${m.id}`);
+                    if (checkbox) checkbox.checked = false;
+                    toggleMarkerVisibility(m.id, false);
+
+                    // Kategorie-Visibility aktualisieren
+                    const catId = `cat-${m.category || 'sonstiges'}`;
+                    categoryVisibility[catId] = false;
+                }
+            });
+        }
+
+        // Admin Panel verschiebbar machen
+        function makePanelDraggable() {
+            const panel = document.getElementById('adminPanel');
+            const header = document.getElementById('adminPanelHeader');
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                if (e.target === header || e.target.parentElement === header) {
+                    isDragging = true;
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    setTranslate(currentX, currentY, panel);
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+            }
+        }
+
+        // Icon Picker
+        document.addEventListener('DOMContentLoaded', function() {
+            // Panel draggable machen
+            makePanelDraggable();
+
+            document.querySelectorAll('.icon-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedIcon = this.dataset.icon;
+                });
+            });
+
+            // Checkbox für versteckte Marker
+            document.getElementById('markerHidden').addEventListener('change', function(e) {
+                const passwordGroup = document.getElementById('hiddenPasswordGroup');
+                if (e.target.checked) {
+                    passwordGroup.style.display = 'block';
+                } else {
+                    passwordGroup.style.display = 'none';
+                }
+            });
+
+            // Straßen-Breite Slider Wert-Anzeige
+            document.getElementById('roadWidth').addEventListener('input', function(e) {
+                document.getElementById('roadWidthValue').textContent = e.target.value + 'px';
+            });
+
+            // Enter für Login
+            document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+
+            // Enter für versteckte Punkte
+            document.getElementById('hiddenPointsPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    unlockHiddenPoints();
+                }
+            });
+
+            // Suchfunktion
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                // TODO: Implementiere Suche in Markern
+                console.log('Suche nach:', searchTerm);
+            });
+        });
+
+        // Marker-Platzierungsmodus aktivieren/deaktivieren
+        function toggleMarkerMode() {
+            if (isPlacingMarker) {
+                cancelMarker();
+            } else {
+                isPlacingMarker = true;
+                document.getElementById('addMarkerBtn').style.display = 'none';
+                document.getElementById('confirmMarkerBtn').style.display = 'none';
+                document.getElementById('cancelMarkerBtn').style.display = 'inline-block';
+                map.getContainer().style.cursor = 'crosshair';
+                alert('📍 Klicken Sie auf die Karte, um den Marker zu platzieren.');
+            }
+        }
+
+        // Marker an Position platzieren
+        function placeMarkerAtPosition(lat, lng) {
+            // Entferne alten temporären Marker falls vorhanden
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+            }
+
+            tempMarkerPosition = { lat, lng };
+
+            // Erstelle temporären Marker zur Vorschau (kleinere Größe)
+            const divIcon = L.divIcon({
+                html: `<div style="font-size: 24px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); line-height: 24px; text-align: center;">${selectedIcon}</div>`,
+                className: 'custom-marker-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24]
+            });
+
+            tempMarker = L.marker([lat, lng], { icon: divIcon }).addTo(map);
+            tempMarker.bindPopup('Temporärer Marker - Füllen Sie die Details aus und klicken Sie "Bestätigen"').openPopup();
+
+            // Zeige Bestätigen-Button
+            document.getElementById('confirmMarkerBtn').style.display = 'inline-block';
+        }
+
+        // Marker bestätigen und speichern
+        async function confirmMarker() {
+            if (!tempMarkerPosition) {
+                alert('❌ Bitte platzieren Sie zuerst einen Marker auf der Karte!');
+                return;
+            }
+
+            const title = document.getElementById('markerTitle').value || 'Neuer Marker';
+            const description = document.getElementById('markerDescription').value || '';
+            const category = document.getElementById('markerCategory').value;
+            const isHidden = document.getElementById('markerHidden').checked;
+            const password = document.getElementById('markerPassword').value;
+
+            // Validierung für versteckte Marker
+            if (isHidden && !password) {
+                alert('❌ Bitte geben Sie ein Passwort für den versteckten Marker ein!');
+                return;
+            }
+
+            const markerData = {
+                lat: tempMarkerPosition.lat,
+                lng: tempMarkerPosition.lng,
+                title: title,
+                description: description,
+                category: category,
+                icon: selectedIcon,
+                hidden: isHidden,
+                password: isHidden ? password : null,
+                id: Date.now()
+            };
+
+            try {
+                await apiRequest('/api/markers', {
+                    method: 'POST',
+                    body: JSON.stringify(markerData)
+                });
+
+                // Entferne temporären Marker
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+
+                markers.push(markerData);
+
+                // Nur sichtbare Marker oder freigeschaltete versteckte Marker anzeigen
+                if (!isHidden || (isHidden && unlockedPasswords.includes(password))) {
+                    createMarker(markerData);
+                }
+
+                updateMarkerList();
+
+                // Felder zurücksetzen
+                document.getElementById('markerTitle').value = '';
+                document.getElementById('markerDescription').value = '';
+                document.getElementById('markerHidden').checked = false;
+                document.getElementById('markerPassword').value = '';
+                document.getElementById('hiddenPasswordGroup').style.display = 'none';
+
+                // Modus zurücksetzen
+                isPlacingMarker = false;
+                tempMarkerPosition = null;
+                document.getElementById('addMarkerBtn').style.display = 'inline-block';
+                document.getElementById('confirmMarkerBtn').style.display = 'none';
+                document.getElementById('cancelMarkerBtn').style.display = 'none';
+                map.getContainer().style.cursor = '';
+
+                if (isHidden) {
+                    alert('✅ Versteckter Marker erstellt! Passwort: ' + password);
+                }
+            } catch (error) {
+                alert('❌ Fehler beim Speichern des Markers!');
+            }
+        }
+
+        // Marker-Platzierung abbrechen
+        function cancelMarker() {
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+                tempMarker = null;
+            }
+            isPlacingMarker = false;
+            tempMarkerPosition = null;
+            document.getElementById('addMarkerBtn').style.display = 'inline-block';
+            document.getElementById('confirmMarkerBtn').style.display = 'none';
+            document.getElementById('cancelMarkerBtn').style.display = 'none';
+            map.getContainer().style.cursor = '';
+        }
+
+        function createMarker(data) {
+            const divIcon = L.divIcon({
+                html: `<div style="font-size: 24px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); line-height: 24px; text-align: center;">${data.icon}</div>`,
+                className: 'custom-marker-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24]
+            });
+
+            const marker = L.marker([data.lat, data.lng], { icon: divIcon }).addTo(map);
+
+            // Permanentes Tooltip mit dem Titel - mittig über Icon
+            marker.bindTooltip(data.title, {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -26],
+                className: 'marker-label-tooltip'
+            });
+
+            const popupContent = `
+                <div class="popup-icon">${data.icon}</div>
+                <div class="popup-title">${data.title}</div>
+                ${data.category ? `<div style="color: #00ff00; font-size: 12px; margin: 5px 0;"><i class="fas fa-tag"></i> ${data.category}</div>` : ''}
+                ${data.hidden ? '<div style="color: #ffc107; font-size: 12px; margin: 5px 0;"><i class="fas fa-lock"></i> Versteckter Punkt</div>' : ''}
+                ${data.description ? `<div style="margin: 8px 0; font-size: 14px;">${data.description}</div>` : ''}
+                <div style="color: #888; font-size: 12px; margin-top: 8px;">
+                    Position: [${Math.round(data.lat)}, ${Math.round(data.lng)}]
+                </div>
+                ${isAdminMode ? `<button class="btn-custom btn-delete" onclick="deleteMarker(${data.id})" style="margin-top: 10px; width: 100%;"><i class="fas fa-trash"></i> Löschen</button>` : ''}
+            `;
+
+            marker.bindPopup(popupContent);
+            markerObjects.push({ id: data.id, marker: marker });
+        }
+
+        async function deleteMarker(id) {
+            if (confirm('Marker wirklich löschen?')) {
+                try {
+                    await apiRequest(`/api/markers/${id}`, { method: 'DELETE' });
+
+                    markers = markers.filter(m => m.id !== id);
+                    const markerObj = markerObjects.find(m => m.id === id);
+                    if (markerObj) {
+                        map.removeLayer(markerObj.marker);
+                        markerObjects = markerObjects.filter(m => m.id !== id);
+                    }
+                    updateMarkerList();
+                } catch (error) {
+                    alert('❌ Fehler beim Löschen des Markers!');
+                }
+            }
+        }
+
+        async function clearAllMarkers() {
+            if (confirm('Wirklich ALLE Marker löschen?')) {
+                try {
+                    await apiRequest('/api/markers/clear', { method: 'POST' });
+
+                    markerObjects.forEach(obj => map.removeLayer(obj.marker));
+                    markers = [];
+                    markerObjects = [];
+                    updateMarkerList();
+                } catch (error) {
+                    alert('❌ Fehler beim Löschen aller Marker!');
+                }
+            }
+        }
+
+        function updateMarkerList() {
+            const container = document.getElementById('markerList');
+            const count = document.getElementById('markerCount');
+            count.textContent = markers.length;
+
+            if (markers.length === 0) {
+                container.innerHTML = '<p style="color: #888; text-align: center; padding: 15px; font-size: 12px;">Keine Marker</p>';
+            } else {
+                container.innerHTML = markers.map(m => `
+                    <div class="marker-item">
+                        <h5>
+                            ${m.icon} ${m.title}
+                            ${m.hidden ? '<i class="fas fa-lock" style="color: #ffc107; margin-left: 5px;" title="Versteckter Marker"></i>' : ''}
+                        </h5>
+                        <p><i class="fas fa-map-marker-alt"></i> [${Math.round(m.lat)}, ${Math.round(m.lng)}]</p>
+                        ${m.description ? `<p><i class="fas fa-info-circle"></i> ${m.description}</p>` : ''}
+                        ${m.hidden ? `<p style="color: #ffc107; font-size: 11px;"><i class="fas fa-key"></i> Passwort erforderlich</p>` : ''}
+                        <button class="btn-custom btn-delete" onclick="deleteMarker(${m.id})">
+                            <i class="fas fa-trash"></i> Löschen
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            // Update Sidebar
+            updateBezirkeSidebar();
+        }
+
+        // API Laden
+        async function loadMarkers() {
+            try {
+                const data = await apiRequest('/api/markers');
+                markers = data;
+                // Nur sichtbare Marker laden (versteckte werden erst nach Passwort-Eingabe angezeigt)
+                markers.forEach(m => {
+                    if (!m.hidden) {
+                        createMarker(m);
+                    }
+                });
+                updateMarkerList();
+            } catch (error) {
+                console.error('Fehler beim Laden der Marker:', error);
+            }
+        }
+
+        function exportMarkers() {
+            const dataStr = JSON.stringify(markers, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const fileName = `gta-map-markers-${new Date().toISOString().split('T')[0]}.json`;
+
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', fileName);
+            link.click();
+
+            alert(`✅ ${markers.length} Marker exportiert!`);
+        }
+
+        async function importMarkers() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = async e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = async event => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (confirm(`${imported.length} Marker gefunden. Überschreiben?`)) {
+                            await apiRequest('/api/markers/import', {
+                                method: 'POST',
+                                body: JSON.stringify(imported)
+                            });
+
+                            markerObjects.forEach(obj => map.removeLayer(obj.marker));
+                            markerObjects = [];
+                            markers = imported;
+                            markers.forEach(m => {
+                                if (!m.hidden) {
+                                    createMarker(m);
+                                }
+                            });
+                            updateMarkerList();
+                            alert('✅ Marker importiert!');
+                        }
+                    } catch (err) {
+                        alert('❌ Fehler: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // Bezirk-Zeichnung Variablen
+        let drawingPoints = [];
+        let drawingClickHandler = null;
+
+        // Bezirk-Zeichnung starten
+        function startDrawingDistrict() {
+            const name = document.getElementById('districtName').value;
+            if (!name) {
+                alert('❌ Bitte geben Sie einen Bezirk-Namen ein!');
+                return;
+            }
+
+            alert('✏️ Klicken Sie auf die Karte, um Eckpunkte zu setzen. Verwenden Sie den "Fertigstellen"-Button zum Beenden.');
+            isDrawingDistrict = true;
+            drawingPoints = [];
+
+            // Buttons umschalten
+            document.getElementById('startDistrictBtn').style.display = 'none';
+            document.getElementById('finishDistrictBtn').style.display = 'inline-block';
+            document.getElementById('cancelDistrictBtn').style.display = 'inline-block';
+
+            drawingClickHandler = function(e) {
+                drawingPoints.push([e.latlng.lat, e.latlng.lng]);
+
+                if (currentPolygon) {
+                    map.removeLayer(currentPolygon);
+                }
+
+                const color = document.getElementById('districtColor').value;
+                currentPolygon = L.polygon(drawingPoints, {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.2,
+                    weight: 2
+                }).addTo(map);
+            };
+
+            map.on('click', drawingClickHandler);
+        }
+
+        async function finishDrawingDistrict() {
+            if (drawingPoints.length < 3) {
+                alert('❌ Ein Bezirk benötigt mindestens 3 Punkte!');
+                return;
+            }
+
+            const name = document.getElementById('districtName').value;
+            const color = document.getElementById('districtColor').value;
+            const districtData = {
+                id: Date.now(),
+                name: name,
+                color: color,
+                points: drawingPoints
+            };
+
+            try {
+                await apiRequest('/api/districts', {
+                    method: 'POST',
+                    body: JSON.stringify(districtData)
+                });
+
+                districts.push(districtData);
+
+                // Berechne den Mittelpunkt des Polygons für das Label
+                const bounds = currentPolygon.getBounds();
+                const center = bounds.getCenter();
+
+                // Erstelle ein Label im Zentrum des Bezirks (kompakt)
+                const labelDiv = document.createElement('div');
+                labelDiv.innerHTML = `<div style="
+                    background: rgba(0, 0, 0, 0.65);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-weight: 500;
+                    font-size: 10px;
+                    white-space: nowrap;
+                    text-align: center;
+                    pointer-events: none;
+                    border: 1px solid ${color};
+                ">${name}</div>`;
+
+                const label = L.marker(center, {
+                    icon: L.divIcon({
+                        className: 'district-label',
+                        html: labelDiv.innerHTML,
+                        iconSize: null,
+                        iconAnchor: null
+                    })
+                }).addTo(map);
+
+                // Zentriere das Label nach dem Rendern
+                setTimeout(() => {
+                    const labelElement = label.getElement();
+                    if (labelElement) {
+                        const width = labelElement.offsetWidth;
+                        const height = labelElement.offsetHeight;
+                        label.setIcon(L.divIcon({
+                            className: 'district-label',
+                            html: labelDiv.innerHTML,
+                            iconSize: null,
+                            iconAnchor: [width / 2, height / 2]
+                        }));
+                    }
+                }, 100);
+
+                districtLayers.push({ polygon: currentPolygon, label: label });
+                updateDistrictList();
+
+                document.getElementById('districtName').value = '';
+                alert('✅ Bezirk "' + name + '" erstellt mit ' + drawingPoints.length + ' Punkten!');
+
+                // Aufräumen
+                cleanupDistrictDrawing();
+            } catch (error) {
+                alert('❌ Fehler beim Speichern des Bezirks!');
+            }
+        }
+
+        function cancelDrawingDistrict() {
+            if (confirm('Möchten Sie die Bezirk-Erstellung wirklich abbrechen?')) {
+                if (currentPolygon) {
+                    map.removeLayer(currentPolygon);
+                }
+                cleanupDistrictDrawing();
+            }
+        }
+
+        function cleanupDistrictDrawing() {
+            if (drawingClickHandler) {
+                map.off('click', drawingClickHandler);
+                drawingClickHandler = null;
+            }
+
+            isDrawingDistrict = false;
+            drawingPoints = [];
+            currentPolygon = null;
+
+            // Buttons zurücksetzen
+            document.getElementById('startDistrictBtn').style.display = 'inline-block';
+            document.getElementById('finishDistrictBtn').style.display = 'none';
+            document.getElementById('cancelDistrictBtn').style.display = 'none';
+        }
+
+        // Straßen-Zeichnen starten
+        function startDrawingRoad() {
+            const name = document.getElementById('roadName').value;
+            if (!name) {
+                alert('❌ Bitte geben Sie einen Straßen-Namen ein!');
+                return;
+            }
+
+            alert('✏️ Klicken Sie auf die Karte, um Punkte zu setzen. Verwenden Sie den "Fertigstellen"-Button zum Beenden.');
+            isDrawingRoad = true;
+            roadPoints = [];
+
+            // Buttons umschalten
+            document.getElementById('startRoadBtn').style.display = 'none';
+            document.getElementById('finishRoadBtn').style.display = 'inline-block';
+            document.getElementById('cancelRoadBtn').style.display = 'inline-block';
+
+            roadClickHandler = function(e) {
+                roadPoints.push([e.latlng.lat, e.latlng.lng]);
+
+                if (currentPolyline) {
+                    map.removeLayer(currentPolyline);
+                }
+
+                const color = document.getElementById('roadColor').value;
+                const width = parseInt(document.getElementById('roadWidth').value);
+                currentPolyline = L.polyline(roadPoints, {
+                    color: color,
+                    weight: width,
+                    opacity: 0.8
+                }).addTo(map);
+            };
+
+            map.on('click', roadClickHandler);
+        }
+
+        // Straßen-Zeichnen fertigstellen
+        async function finishDrawingRoad() {
+            if (roadPoints.length < 2) {
+                alert('❌ Eine Straße benötigt mindestens 2 Punkte!');
+                return;
+            }
+
+            const name = document.getElementById('roadName').value;
+            const color = document.getElementById('roadColor').value;
+            const width = parseInt(document.getElementById('roadWidth').value);
+            const roadData = {
+                id: Date.now(),
+                name: name,
+                color: color,
+                width: width,
+                points: roadPoints
+            };
+
+            try {
+                await apiRequest('/api/roads', {
+                    method: 'POST',
+                    body: JSON.stringify(roadData)
+                });
+
+                roads.push(roadData);
+
+                // Berechne den Mittelpunkt der Linie für das Label
+                const midIndex = Math.floor(roadPoints.length / 2);
+                const labelPosition = roadPoints[midIndex];
+
+                // Erstelle ein Label in der Mitte der Straße (kompakt)
+                const labelDiv = document.createElement('div');
+                labelDiv.innerHTML = `<div style="
+                    background: rgba(0, 0, 0, 0.65);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-weight: 500;
+                    font-size: 9px;
+                    white-space: nowrap;
+                    text-align: center;
+                    pointer-events: none;
+                    border: 1px solid ${color};
+                ">${name}</div>`;
+
+                const label = L.marker(labelPosition, {
+                    icon: L.divIcon({
+                        className: 'road-label',
+                        html: labelDiv.innerHTML,
+                        iconSize: null,
+                        iconAnchor: null
+                    })
+                }).addTo(map);
+
+                // Zentriere das Label nach dem Rendern
+                setTimeout(() => {
+                    const labelElement = label.getElement();
+                    if (labelElement) {
+                        const width = labelElement.offsetWidth;
+                        const height = labelElement.offsetHeight;
+                        label.setIcon(L.divIcon({
+                            className: 'road-label',
+                            html: labelDiv.innerHTML,
+                            iconSize: null,
+                            iconAnchor: [width / 2, height / 2]
+                        }));
+                    }
+                }, 100);
+
+                roadLayers.push({ polyline: currentPolyline, label: label, id: roadData.id });
+
+                updateRoadList();
+                updateBezirkeSidebar();
+                cleanupRoadDrawing();
+
+                document.getElementById('roadName').value = '';
+                alert('✅ Straße erfolgreich erstellt!');
+            } catch (error) {
+                alert('❌ Fehler beim Speichern der Straße!');
+                console.error(error);
+            }
+        }
+
+        // Straßen-Zeichnen abbrechen
+        function cancelDrawingRoad() {
+            if (confirm('Möchten Sie die Straßen-Erstellung wirklich abbrechen?')) {
+                if (currentPolyline) {
+                    map.removeLayer(currentPolyline);
+                }
+                cleanupRoadDrawing();
+            }
+        }
+
+        function cleanupRoadDrawing() {
+            if (roadClickHandler) {
+                map.off('click', roadClickHandler);
+                roadClickHandler = null;
+            }
+
+            isDrawingRoad = false;
+            roadPoints = [];
+            currentPolyline = null;
+
+            // Buttons zurücksetzen
+            document.getElementById('startRoadBtn').style.display = 'inline-block';
+            document.getElementById('finishRoadBtn').style.display = 'none';
+            document.getElementById('cancelRoadBtn').style.display = 'none';
+        }
+
+        function updateRoadList() {
+            const container = document.getElementById('roadList');
+            if (roads.length === 0) {
+                container.innerHTML = '<p style="color: #888; font-size: 12px; padding: 10px;">Keine Straßen</p>';
+                return;
+            }
+
+            container.innerHTML = roads.map(r => `
+                <div class="marker-item">
+                    <h5>
+                        <span style="display: inline-block; width: 30px; height: 3px; background: ${r.color}; border-radius: 2px; margin-right: 5px; vertical-align: middle;"></span>
+                        ${r.name}
+                    </h5>
+                    <p><i class="fas fa-road"></i> ${r.points.length} Punkte, ${r.width}px Breite</p>
+                    <button class="btn-custom btn-delete" onclick="deleteRoad(${r.id})">
+                        <i class="fas fa-trash"></i> Löschen
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteRoad(id) {
+            if (!confirm('Möchten Sie diese Straße wirklich löschen?')) return;
+
+            try {
+                await apiRequest(`/api/roads/${id}`, {
+                    method: 'DELETE'
+                });
+
+                roads = roads.filter(r => r.id !== id);
+                const roadLayerIndex = roadLayers.findIndex(rl => rl.id === id);
+                if (roadLayerIndex !== -1) {
+                    const roadLayer = roadLayers[roadLayerIndex];
+                    map.removeLayer(roadLayer.polyline);
+                    map.removeLayer(roadLayer.label);
+                    roadLayers.splice(roadLayerIndex, 1);
+                }
+                updateRoadList();
+                updateBezirkeSidebar();
+            } catch (error) {
+                alert('❌ Fehler beim Löschen der Straße!');
+                console.error(error);
+            }
+        }
+
+        async function loadRoads() {
+            try {
+                const loadedRoads = await apiRequest('/api/roads');
+                roads = loadedRoads;
+
+                // Zeichne alle Straßen auf die Karte
+                loadedRoads.forEach(road => {
+                    const polyline = L.polyline(road.points, {
+                        color: road.color,
+                        weight: road.width,
+                        opacity: 0.8
+                    }).addTo(map);
+
+                    // Berechne den Mittelpunkt der Linie für das Label
+                    const midIndex = Math.floor(road.points.length / 2);
+                    const labelPosition = road.points[midIndex];
+
+                    const labelDiv = document.createElement('div');
+                    labelDiv.innerHTML = `<div style="
+                        background: rgba(0, 0, 0, 0.65);
+                        color: white;
+                        padding: 2px 6px;
+                        border-radius: 3px;
+                        font-weight: 500;
+                        font-size: 9px;
+                        white-space: nowrap;
+                        text-align: center;
+                        pointer-events: none;
+                        border: 1px solid ${road.color};
+                    ">${road.name}</div>`;
+
+                    const label = L.marker(labelPosition, {
+                        icon: L.divIcon({
+                            className: 'road-label',
+                            html: labelDiv.innerHTML,
+                            iconSize: null,
+                            iconAnchor: null
+                        })
+                    }).addTo(map);
+
+                    // Zentriere das Label nach dem Rendern
+                    setTimeout(() => {
+                        const labelElement = label.getElement();
+                        if (labelElement) {
+                            const width = labelElement.offsetWidth;
+                            const height = labelElement.offsetHeight;
+                            label.setIcon(L.divIcon({
+                                className: 'road-label',
+                                html: labelDiv.innerHTML,
+                                iconSize: null,
+                                iconAnchor: [width / 2, height / 2]
+                            }));
+                        }
+                    }, 100);
+
+                    roadLayers.push({ polyline, label, id: road.id });
+                });
+
+                updateRoadList();
+            } catch (error) {
+                console.error('Fehler beim Laden der Straßen:', error);
+            }
+        }
+
+        function toggleRoad(id) {
+            const roadLayerObj = roadLayers.find(rl => rl.id === id);
+            if (!roadLayerObj) return;
+
+            if (map.hasLayer(roadLayerObj.polyline)) {
+                map.removeLayer(roadLayerObj.polyline);
+                map.removeLayer(roadLayerObj.label);
+            } else {
+                map.addLayer(roadLayerObj.polyline);
+                map.addLayer(roadLayerObj.label);
+            }
+        }
+
+        function updateDistrictList() {
+            const container = document.getElementById('districtList');
+            if (districts.length === 0) {
+                container.innerHTML = '<p style="color: #888; font-size: 12px; padding: 10px;">Keine Bezirke</p>';
+                return;
+            }
+
+            container.innerHTML = districts.map(d => `
+                <div class="marker-item">
+                    <h5>
+                        <span style="display: inline-block; width: 15px; height: 15px; background: ${d.color}; border-radius: 3px; margin-right: 5px;"></span>
+                        ${d.name}
+                    </h5>
+                    <p><i class="fas fa-map-marker-alt"></i> ${d.points.length} Punkte</p>
+                    <button class="btn-custom btn-delete" onclick="deleteDistrict(${d.id})">
+                        <i class="fas fa-trash"></i> Löschen
+                    </button>
+                </div>
+            `).join('');
+
+            // Update Sidebar
+            updateBezirkeSidebar();
+        }
+
+        // Globale Tracking-Variablen für Kategorien-Sichtbarkeit
+        let categoryVisibility = {};
+
+        function updateBezirkeSidebar() {
+            const sidebarContainer = document.getElementById('dynamicBezirkeList');
+
+            // Gruppiere Marker nach Kategorien
+            const categories = {};
+            markers.forEach(m => {
+                if (!m.hidden || (m.hidden && unlockedPasswords.includes(m.password))) {
+                    const cat = m.category || 'sonstiges';
+                    if (!categories[cat]) {
+                        categories[cat] = [];
+                    }
+                    categories[cat].push(m);
+                }
+            });
+
+            // Gruppiere Bezirke
+            const districtGroup = districts.length > 0 ? districts : null;
+
+            // Baue HTML
+            let html = '';
+
+            // Bezirke
+            if (districtGroup) {
+                const catId = 'cat-districts';
+                if (categoryVisibility[catId] === undefined) categoryVisibility[catId] = true;
+                html += `
+                    <div class="bezirk-category">
+                        <div class="bezirk-category-header" onclick="toggleCategoryCollapse('${catId}')">
+                            <h4>🗺️ Bezirke (${districts.length})</h4>
+                            <button class="category-toggle-btn ${!categoryVisibility[catId] ? 'all-hidden' : ''}" onclick="event.stopPropagation(); toggleAllInCategory('districts')" title="Alle ein-/ausblenden">
+                                ${categoryVisibility[catId] ? 'Alle aus' : 'Alle an'}
+                            </button>
+                        </div>
+                        <div id="${catId}-items">
+                        ${districts.map(d => `
+                            <div class="bezirk-item">
+                                <input type="checkbox" id="district-${d.id}" checked onchange="toggleDistrict(${d.id})">
+                                <label for="district-${d.id}">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: ${d.color}; border-radius: 2px; margin-right: 5px;"></span>
+                                    ${d.name}
+                                </label>
+                            </div>
+                        `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Straßen
+            if (roads.length > 0) {
+                const catId = 'cat-roads';
+                if (categoryVisibility[catId] === undefined) categoryVisibility[catId] = true;
+                html += `
+                    <div class="bezirk-category">
+                        <div class="bezirk-category-header" onclick="toggleCategoryCollapse('${catId}')">
+                            <h4>🛣️ Straßen (${roads.length})</h4>
+                            <button class="category-toggle-btn ${!categoryVisibility[catId] ? 'all-hidden' : ''}" onclick="event.stopPropagation(); toggleAllInCategory('roads')" title="Alle ein-/ausblenden">
+                                ${categoryVisibility[catId] ? 'Alle aus' : 'Alle an'}
+                            </button>
+                        </div>
+                        <div id="${catId}-items">
+                        ${roads.map(r => `
+                            <div class="bezirk-item">
+                                <input type="checkbox" id="road-${r.id}" checked onchange="toggleRoad(${r.id})">
+                                <label for="road-${r.id}">
+                                    <span style="display: inline-block; width: 20px; height: 3px; background: ${r.color}; border-radius: 1px; margin-right: 5px; vertical-align: middle;"></span>
+                                    ${r.name}
+                                </label>
+                            </div>
+                        `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Marker-Kategorien
+            const categoryNames = {
+                'polizei': '🚔 Polizei',
+                'krankenhaus': '🏥 Krankenhaus',
+                'restaurant': '🍽️ Restaurant',
+                'shop': '🏪 Shops',
+                'garage': '🔧 Garagen',
+                'park': '🌳 Parks',
+                'regierung': '🏛️ Regierung',
+                'fraktion': '⚔️ Fraktionen',
+                'immobilie': '🏠 Immobilien',
+                'sonstiges': '📍 Sonstiges'
+            };
+
+            Object.keys(categories).forEach(catKey => {
+                const catName = categoryNames[catKey] || catKey;
+                const catId = `cat-${catKey}`;
+                if (categoryVisibility[catId] === undefined) categoryVisibility[catId] = true;
+                html += `
+                    <div class="bezirk-category">
+                        <div class="bezirk-category-header" onclick="toggleCategoryCollapse('${catId}')">
+                            <h4>${catName} (${categories[catKey].length})</h4>
+                            <button class="category-toggle-btn ${!categoryVisibility[catId] ? 'all-hidden' : ''}" onclick="event.stopPropagation(); toggleAllInCategory('${catKey}')" title="Alle ein-/ausblenden">
+                                ${categoryVisibility[catId] ? 'Alle aus' : 'Alle an'}
+                            </button>
+                        </div>
+                        <div id="${catId}-items">
+                        ${categories[catKey].map(m => `
+                            <div class="bezirk-item">
+                                <input type="checkbox" id="marker-${m.id}" checked onchange="toggleMarker(${m.id})">
+                                <label for="marker-${m.id}">${m.icon} ${m.title}</label>
+                            </div>
+                        `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (html === '') {
+                sidebarContainer.innerHTML = `
+                    <p style="text-align: center; padding: 40px 20px; color: #666;">
+                        <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                        Keine Bezirke, Straßen oder Marker vorhanden.<br>
+                        <small>Erstellen Sie diese im Admin-Panel</small>
+                    </p>
+                `;
+            } else {
+                sidebarContainer.innerHTML = html;
+            }
+        }
+
+        function toggleCategoryCollapse(catId) {
+            const items = document.getElementById(`${catId}-items`);
+            if (items) {
+                items.style.display = items.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        function toggleAllInCategory(category) {
+            const catId = `cat-${category}`;
+            categoryVisibility[catId] = !categoryVisibility[catId];
+            const showAll = categoryVisibility[catId];
+
+            if (category === 'districts') {
+                districts.forEach(d => {
+                    const checkbox = document.getElementById(`district-${d.id}`);
+                    if (checkbox) {
+                        checkbox.checked = showAll;
+                        toggleDistrict(d.id, showAll);
+                    }
+                });
+            } else if (category === 'roads') {
+                roads.forEach(r => {
+                    const checkbox = document.getElementById(`road-${r.id}`);
+                    if (checkbox) {
+                        checkbox.checked = showAll;
+                        toggleRoadVisibility(r.id, showAll);
+                    }
+                });
+            } else {
+                // Marker-Kategorie
+                markers.forEach(m => {
+                    if ((m.category || 'sonstiges') === category) {
+                        if (!m.hidden || (m.hidden && unlockedPasswords.includes(m.password))) {
+                            const checkbox = document.getElementById(`marker-${m.id}`);
+                            if (checkbox) {
+                                checkbox.checked = showAll;
+                                toggleMarkerVisibility(m.id, showAll);
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateBezirkeSidebar();
+        }
+
+        function toggleMarkerVisibility(id, show) {
+            const markerObj = markerObjects.find(m => m.id === id);
+            if (markerObj) {
+                if (show) {
+                    markerObj.marker.addTo(map);
+                } else {
+                    map.removeLayer(markerObj.marker);
+                }
+            }
+        }
+
+        function toggleRoadVisibility(id, show) {
+            const roadLayerObj = roadLayers.find(rl => rl.id === id);
+            if (roadLayerObj) {
+                if (show) {
+                    map.addLayer(roadLayerObj.polyline);
+                    map.addLayer(roadLayerObj.label);
+                } else {
+                    map.removeLayer(roadLayerObj.polyline);
+                    map.removeLayer(roadLayerObj.label);
+                }
+            }
+        }
+
+        function toggleDistrict(id, forceShow = null) {
+            const checkbox = document.getElementById(`district-${id}`);
+            const index = districts.findIndex(d => d.id === id);
+
+            if (index !== -1 && districtLayers[index]) {
+                const layer = districtLayers[index];
+                const show = forceShow !== null ? forceShow : (checkbox ? checkbox.checked : true);
+                if (show) {
+                    if (layer.polygon) layer.polygon.addTo(map);
+                    if (layer.label) layer.label.addTo(map);
+                } else {
+                    if (layer.polygon) map.removeLayer(layer.polygon);
+                    if (layer.label) map.removeLayer(layer.label);
+                }
+            }
+        }
+
+        function toggleMarker(id) {
+            const checkbox = document.getElementById(`marker-${id}`);
+            const markerObj = markerObjects.find(m => m.id === id);
+
+            if (markerObj) {
+                if (checkbox.checked) {
+                    markerObj.marker.addTo(map);
+                } else {
+                    map.removeLayer(markerObj.marker);
+                }
+            }
+        }
+
+        async function deleteDistrict(id) {
+            if (confirm('Bezirk wirklich löschen?')) {
+                const index = districts.findIndex(d => d.id === id);
+                if (index !== -1) {
+                    try {
+                        await apiRequest(`/api/districts/${id}`, { method: 'DELETE' });
+
+                        if (districtLayers[index]) {
+                            const layer = districtLayers[index];
+                            if (layer.polygon) map.removeLayer(layer.polygon);
+                            if (layer.label) map.removeLayer(layer.label);
+                        }
+                        districts.splice(index, 1);
+                        districtLayers.splice(index, 1);
+                        updateDistrictList();
+                    } catch (error) {
+                        alert('❌ Fehler beim Löschen des Bezirks!');
+                    }
+                }
+            }
+        }
+
+        async function loadDistricts() {
+            try {
+                const data = await apiRequest('/api/districts');
+                districts = data;
+                districts.forEach(d => {
+                    const polygon = L.polygon(d.points, {
+                        color: d.color,
+                        fillColor: d.color,
+                        fillOpacity: 0.2,
+                        weight: 2
+                    }).addTo(map);
+
+                    polygon.bindPopup(`<b>${d.name}</b>`);
+
+                    // Berechne den Mittelpunkt des Polygons für das Label
+                    const bounds = polygon.getBounds();
+                    const center = bounds.getCenter();
+
+                    // Erstelle ein Label im Zentrum des Bezirks (kompakt)
+                    const labelDiv = document.createElement('div');
+                    labelDiv.innerHTML = `<div style="
+                        background: rgba(0, 0, 0, 0.65);
+                        color: white;
+                        padding: 2px 6px;
+                        border-radius: 3px;
+                        font-weight: 500;
+                        font-size: 10px;
+                        white-space: nowrap;
+                        text-align: center;
+                        pointer-events: none;
+                        border: 1px solid ${d.color};
+                    ">${d.name}</div>`;
+
+                    const label = L.marker(center, {
+                        icon: L.divIcon({
+                            className: 'district-label',
+                            html: labelDiv.innerHTML,
+                            iconSize: null,
+                            iconAnchor: null
+                        })
+                    }).addTo(map);
+
+                    // Zentriere das Label nach dem Rendern
+                    setTimeout(() => {
+                        const labelElement = label.getElement();
+                        if (labelElement) {
+                            const width = labelElement.offsetWidth;
+                            const height = labelElement.offsetHeight;
+                            label.setIcon(L.divIcon({
+                                className: 'district-label',
+                                html: labelDiv.innerHTML,
+                                iconSize: null,
+                                iconAnchor: [width / 2, height / 2]
+                            }));
+                        }
+                    }, 100);
+
+                    districtLayers.push({ polygon: polygon, label: label });
+                });
+                updateDistrictList();
+            } catch (error) {
+                console.error('Fehler beim Laden der Bezirke:', error);
+            }
+        }
+
+        // Initialisierung
+        initMap();
+        loadMarkers();
+        loadDistricts();
+        loadRoads();
+        updateBezirkeSidebar();
+        console.log('🗺️ Police Department - Ortskunde Karte geladen!');
+    </script>
+</body>
+</html>

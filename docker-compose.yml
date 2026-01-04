@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  leaflet-map:
+    image: nginx:alpine
+    container_name: leaflet-map
+    ports:
+      - "8099:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./LSPD_Logo.png:/usr/share/nginx/html/LSPD_Logo.png:ro
+    restart: unless-stopped
+    networks:
+      - leaflet-network
+    depends_on:
+      - leaflet-backend
+
+  leaflet-backend:
+    build: ./backend
+    container_name: leaflet-backend
+    expose:
+      - "3001"
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
+    networks:
+      - leaflet-network
+
+networks:
+  leaflet-network:
+    driver: bridge

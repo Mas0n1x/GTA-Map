@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corleone City - KARTE</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #2c3e50;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+            background: #84B2CE;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #37474f;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .top-nav h1 {
+            color: white;
+            font-size: 20px;
+            margin: 0;
+            margin-right: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background: #455a64;
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-box input::placeholder {
+            color: #b0bec5;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: #546e7a;
+        }
+
+        .admin-login-btn {
+            margin-left: auto;
+            padding: 8px 20px;
+            background: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .admin-login-btn:hover {
+            background: #e64a19;
+        }
+
+        .user-info {
+            margin-left: auto;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            padding: 6px 15px;
+            background: #ffc107;
+            color: black;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            background: #ffb300;
+        }
+
+        /* Right Sidebar - Bezirke */
+        .bezirke-sidebar {
+            position: absolute;
+            top: 70px;
+            right: 10px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1500;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        .bezirke-header {
+            background: #37474f;
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .bezirke-content {
+            padding: 15px;
+        }
+
+        .bezirk-category {
+            margin-bottom: 15px;
+        }
+
+        .bezirk-category h4 {
+            font-size: 14px;
+            color: #37474f;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .bezirk-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+        }
+
+        .bezirk-item input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .bezirk-item label {
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            background: rgba(26, 26, 26, 0.95);
+            color: white;
+            padding: 20px;
+            padding-top: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 1500;
+            width: 350px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            border: 2px solid #ff0000;
+            display: none;
+            cursor: move;
+        }
+
+        .admin-panel-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ff0000;
+            padding: 10px 15px;
+            border-radius: 6px 6px 0 0;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .admin-panel-header:active {
+            cursor: grabbing;
+        }
+
+        .admin-panel-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: white;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .admin-panel h3 {
+            color: #ff0000;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #ff0000;
+            padding-bottom: 10px;
+        }
+
+        .admin-panel h4 {
+            color: #ff0000;
+            margin: 20px 0 10px 0;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #2a2a2a;
+            color: white;
+            font-size: 13px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        .btn-custom {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin: 5px 5px 5px 0;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-add {
+            background: #ff0000;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #cc0000;
+        }
+
+        .btn-export {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #218838;
+        }
+
+        .btn-import {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-import:hover {
+            background: #0056b3;
+        }
+
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #545b62;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .marker-item {
+            background: #2a2a2a;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #ff0000;
+        }
+
+        .marker-item h5 {
+            margin: 0 0 6px 0;
+            font-size: 13px;
+            color: #ff0000;
+        }
+
+        .marker-item p {
+            font-size: 11px;
+            color: #aaa;
+            margin: 3px 0;
+        }
+
+        .icon-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .icon-option {
+            padding: 8px;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .icon-option:hover,
+        .icon-option.active {
+            border-color: #ff0000;
+            background: #3a3a3a;
+            transform: scale(1.05);
+        }
+
+        .coords-display {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            border: 1px solid #444;
+        }
+
+        /* Login Modal */
+        .modal-content {
+            background: #1a1a1a;
+            color: white;
+            border: 2px solid #ff0000;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #444;
+        }
+
+        .modal-title {
+            color: #ff0000;
+        }
+
+        .modal-body input {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+        }
+
+        .modal-body input:focus {
+            background: #333;
+            color: white;
+            border-color: #ff0000;
+        }
+
+        /* Custom Leaflet Popup */
+        .leaflet-popup-content-wrapper {
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: 2px solid #ff0000;
+            border-radius: 8px;
+        }
+
+        .leaflet-popup-content {
+            margin: 15px;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ff0000;
+        }
+
+        .popup-title {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .popup-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Scrollbar */
+        .bezirke-sidebar::-webkit-scrollbar,
+        .admin-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .bezirke-sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .bezirke-sidebar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .admin-panel::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .admin-panel::-webkit-scrollbar-thumb {
+            background: #ff0000;
+            border-radius: 3px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <h1>Corleone City - KARTE</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Suche POI/Straße...">
+        </div>
+
+        <div id="guestMode">
+            <button class="admin-login-btn" onclick="showLoginModal()">
+                Admin-Login
+            </button>
+            <span style="color: white; margin-left: 15px;">Nicht eingeloggt</span>
+        </div>
+
+        <div id="adminMode" class="user-info hidden">
+            <span>Admin</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <button class="btn btn-warning" onclick="showHiddenPointsModal()" style="margin-left: 15px; padding: 8px 15px; font-size: 13px;">
+            <i class="fas fa-eye-slash"></i> Versteckte Punkte anzeigen
+        </button>
+    </div>
+
+    <!-- Right Sidebar - Bezirke -->
+    <div class="bezirke-sidebar">
+        <div class="bezirke-header">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Bezirke ausblenden</span>
+        </div>
+        <div class="bezirke-content">
+            <div class="bezirk-category">
+                <h4><i class="fas fa-check-square"></i> Bezirke / Orte</h4>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="airport" checked>
+                    <label for="airport">Bezirke / Airport</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="chumash" checked>
+                    <label for="chumash">Bezirke / Chumash (West Highway)</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="davis" checked>
+                    <label for="davis">Bezirke / Davis / South Los Santos</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="delpero" checked>
+                    <label for="delpero">Bezirke / Del Perro</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="downtown" checked>
+                    <label for="downtown">Bezirke / Downtown</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="grandsenora" checked>
+                    <label for="grandsenora">Bezirke / Grand Senora</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="hafen" checked>
+                    <label for="hafen">Bezirke / Hafen</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="littleseoul" checked>
+                    <label for="littleseoul">Bezirke / Little Seoul</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="mirrorpark" checked>
+                    <label for="mirrorpark">Bezirke / Mirror Park</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="morningwood" checked>
+                    <label for="morningwood">Bezirke / Morningwood</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="oledsder" checked>
+                    <label for="oledsder">Bezirke / Ofedsder</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="paleto" checked>
+                    <label for="paleto">Bezirke / Paleto</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="richman" checked>
+                    <label for="richman">Bezirke / Richman</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="rockfordhills" checked>
+                    <label for="rockfordhills">Bezirke / Rockford Hills</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="vespucci" checked>
+                    <label for="vespucci">Bezirke / Vespucci</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="vinewood" checked>
+                    <label for="vinewood">Bezirke / Vinewood</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="vinewoodhills" checked>
+                    <label for="vinewoodhills">Bezirke / Vinewood Hills</label>
+                </div>
+            </div>
+
+            <div class="bezirk-category">
+                <h4><i class="fas fa-building"></i> Kategorien</h4>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-staaten" checked>
+                    <label for="cat-staaten">staaten</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-park" checked>
+                    <label for="cat-park">park</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-raube" checked>
+                    <label for="cat-raube">raube</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-unternehmen" checked>
+                    <label for="cat-unternehmen">unternehmen</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-restaurant" checked>
+                    <label for="cat-restaurant">restaurant</label>
+                </div>
+                <div class="bezirk-item">
+                    <input type="checkbox" id="cat-informatik" checked>
+                    <label for="cat-informatik">Informatik</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel (Left) -->
+    <div class="admin-panel" id="adminPanel">
+        <h3><i class="fas fa-cog"></i> Admin Panel</h3>
+
+        <div class="coords-display">
+            <div><strong>Koordinaten:</strong></div>
+            <div id="currentCoords">Klicken Sie auf die Karte</div>
+        </div>
+
+        <h4><i class="fas fa-map-pin"></i> Marker hinzufügen</h4>
+
+        <div class="form-group">
+            <label>Icon auswählen:</label>
+            <div class="icon-picker" id="iconPicker">
+                <div class="icon-option active" data-icon="📍" title="Standard">📍</div>
+                <div class="icon-option" data-icon="🚗" title="Auto">🚗</div>
+                <div class="icon-option" data-icon="🏢" title="Gebäude">🏢</div>
+                <div class="icon-option" data-icon="🍽️" title="Restaurant">🍽️</div>
+                <div class="icon-option" data-icon="🏥" title="Krankenhaus">🏥</div>
+                <div class="icon-option" data-icon="⛽" title="Tankstelle">⛽</div>
+                <div class="icon-option" data-icon="🏪" title="Laden">🏪</div>
+                <div class="icon-option" data-icon="🌳" title="Park">🌳</div>
+                <div class="icon-option" data-icon="🕵️" title="Geheim">🕵️</div>
+                <div class="icon-option" data-icon="⭐" title="Besonders">⭐</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Titel:</label>
+            <input type="text" id="markerTitle" placeholder="z.B. Mission Row PD">
+        </div>
+
+        <div class="form-group">
+            <label>Beschreibung:</label>
+            <textarea id="markerDescription" placeholder="Optionale Beschreibung"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="markerHidden" style="margin-right: 8px;">
+                <span>Versteckter Marker (Passwort erforderlich)</span>
+            </label>
+        </div>
+
+        <div class="form-group" id="hiddenPasswordGroup" style="display: none;">
+            <label>Passwort für versteckte Marker:</label>
+            <input type="password" id="markerPassword" placeholder="Passwort festlegen">
+            <small style="color: #888; display: block; margin-top: 5px;">
+                Dieses Passwort wird benötigt, um den Marker anzuzeigen
+            </small>
+        </div>
+
+        <button class="btn-custom btn-add" onclick="addMarkerAtCenter()">
+            <i class="fas fa-plus"></i> Marker hinzufügen
+        </button>
+        <button class="btn-custom btn-clear" onclick="clearAllMarkers()">
+            <i class="fas fa-trash"></i> Alle löschen
+        </button>
+
+        <h4><i class="fas fa-list"></i> Gespeicherte Marker (<span id="markerCount">0</span>)</h4>
+        <div id="markerList" style="margin-top: 10px;"></div>
+
+        <h4><i class="fas fa-download"></i> Import/Export</h4>
+        <button class="btn-custom btn-export" onclick="exportMarkers()">
+            <i class="fas fa-file-export"></i> Export
+        </button>
+        <button class="btn-custom btn-import" onclick="importMarkers()">
+            <i class="fas fa-file-import"></i> Import
+        </button>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-lock"></i> Admin Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Passwort:</label>
+                        <input type="password" id="adminPassword" class="form-control" placeholder="Passwort eingeben">
+                    </div>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px;">Standard-Passwort: admin123</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-danger" onclick="login()">Anmelden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Versteckte Punkte Modal -->
+    <div class="modal fade" id="hiddenPointsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-eye-slash"></i> Versteckte Punkte anzeigen</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Passwort:</label>
+                        <input type="password" id="hiddenPointsPassword" class="form-control" placeholder="Passwort eingeben">
+                    </div>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px;">
+                        Die jeweilige Fraktion ist für die Dokumentation und Sicherstellung des Passworts selbst verantwortlich!
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" onclick="unlockHiddenPoints()">Freischalten</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguration
+        const ADMIN_PASSWORD = 'admin123';
+        let isAdminMode = false;
+        let selectedIcon = '📍';
+        let markers = [];
+        let markerObjects = [];
+        let map;
+        let unlockedPasswords = []; // Gespeicherte freigeschaltete Passwörter
+
+        // GTA 5 Map initialisieren
+        function initMap() {
+            const bounds = [[-3000, -3000], [3000, 3000]];
+
+            map = L.map('map', {
+                crs: L.CRS.Simple,
+                minZoom: 2,
+                maxZoom: 5,
+                zoom: 3,
+                center: [-170, 125],
+                maxBounds: bounds,
+                maxBoundsViscosity: 1.0,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            // Tile Layer
+            L.tileLayer('https://karte.corleone.city/tiles/{z}/{x}/{y}.png', {
+                minZoom: 2,
+                maxZoom: 5,
+                noWrap: true,
+                bounds: bounds
+            }).addTo(map);
+
+            // Koordinaten bei Klick
+            map.on('click', function(e) {
+                if (isAdminMode) {
+                    const lat = Math.round(e.latlng.lat);
+                    const lng = Math.round(e.latlng.lng);
+                    document.getElementById('currentCoords').innerHTML =
+                        `Lat: ${lat}<br>Lng: ${lng}`;
+                }
+            });
+        }
+
+        // Login Modal anzeigen
+        function showLoginModal() {
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+        }
+
+        // Login
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdminMode = true;
+                document.getElementById('guestMode').classList.add('hidden');
+                document.getElementById('adminMode').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.add('active');
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                modal.hide();
+
+                alert('✅ Erfolgreich als Admin angemeldet!');
+            } else {
+                alert('❌ Falsches Passwort!');
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Möchten Sie sich wirklich abmelden?')) {
+                isAdminMode = false;
+                document.getElementById('guestMode').classList.remove('hidden');
+                document.getElementById('adminMode').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('active');
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+
+        // Versteckte Punkte Modal anzeigen
+        function showHiddenPointsModal() {
+            const modal = new bootstrap.Modal(document.getElementById('hiddenPointsModal'));
+            modal.show();
+        }
+
+        // Versteckte Punkte freischalten
+        function unlockHiddenPoints() {
+            const password = document.getElementById('hiddenPointsPassword').value;
+
+            if (!password) {
+                alert('❌ Bitte geben Sie ein Passwort ein!');
+                return;
+            }
+
+            // Prüfe ob Passwort zu einem versteckten Marker passt
+            const matchingMarkers = markers.filter(m => m.hidden && m.password === password);
+
+            if (matchingMarkers.length > 0) {
+                unlockedPasswords.push(password);
+
+                // Zeige alle Marker mit diesem Passwort
+                matchingMarkers.forEach(m => {
+                    const existingMarker = markerObjects.find(mo => mo.id === m.id);
+                    if (!existingMarker) {
+                        createMarker(m);
+                    }
+                });
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('hiddenPointsModal'));
+                modal.hide();
+                document.getElementById('hiddenPointsPassword').value = '';
+
+                alert(`✅ ${matchingMarkers.length} versteckte Punkte freigeschaltet!`);
+            } else {
+                alert('❌ Falsches Passwort! Keine Marker gefunden.');
+            }
+        }
+
+        // Icon Picker
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.icon-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedIcon = this.dataset.icon;
+                });
+            });
+
+            // Checkbox für versteckte Marker
+            document.getElementById('markerHidden').addEventListener('change', function(e) {
+                const passwordGroup = document.getElementById('hiddenPasswordGroup');
+                if (e.target.checked) {
+                    passwordGroup.style.display = 'block';
+                } else {
+                    passwordGroup.style.display = 'none';
+                }
+            });
+
+            // Enter für Login
+            document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+
+            // Enter für versteckte Punkte
+            document.getElementById('hiddenPointsPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    unlockHiddenPoints();
+                }
+            });
+
+            // Suchfunktion
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                // TODO: Implementiere Suche in Markern
+                console.log('Suche nach:', searchTerm);
+            });
+        });
+
+        // Marker hinzufügen
+        function addMarkerAtCenter() {
+            const center = map.getCenter();
+            const title = document.getElementById('markerTitle').value || 'Neuer Marker';
+            const description = document.getElementById('markerDescription').value || '';
+            const isHidden = document.getElementById('markerHidden').checked;
+            const password = document.getElementById('markerPassword').value;
+
+            // Validierung für versteckte Marker
+            if (isHidden && !password) {
+                alert('❌ Bitte geben Sie ein Passwort für den versteckten Marker ein!');
+                return;
+            }
+
+            const markerData = {
+                lat: center.lat,
+                lng: center.lng,
+                title: title,
+                description: description,
+                icon: selectedIcon,
+                hidden: isHidden,
+                password: isHidden ? password : null,
+                id: Date.now()
+            };
+
+            markers.push(markerData);
+
+            // Nur sichtbare Marker oder freigeschaltete versteckte Marker anzeigen
+            if (!isHidden || (isHidden && unlockedPasswords.includes(password))) {
+                createMarker(markerData);
+            }
+
+            updateMarkerList();
+            saveToLocalStorage();
+
+            // Felder zurücksetzen
+            document.getElementById('markerTitle').value = '';
+            document.getElementById('markerDescription').value = '';
+            document.getElementById('markerHidden').checked = false;
+            document.getElementById('markerPassword').value = '';
+            document.getElementById('hiddenPasswordGroup').style.display = 'none';
+
+            if (isHidden) {
+                alert('✅ Versteckter Marker erstellt! Passwort: ' + password);
+            }
+        }
+
+        function createMarker(data) {
+            const divIcon = L.divIcon({
+                html: `<div style="font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${data.icon}</div>`,
+                className: 'custom-marker-icon',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            const marker = L.marker([data.lat, data.lng], { icon: divIcon }).addTo(map);
+
+            const popupContent = `
+                <div class="popup-icon">${data.icon}</div>
+                <div class="popup-title">${data.title}</div>
+                ${data.hidden ? '<div style="color: #ffc107; font-size: 12px; margin: 5px 0;"><i class="fas fa-lock"></i> Versteckter Punkt</div>' : ''}
+                ${data.description ? `<div style="margin: 8px 0; font-size: 14px;">${data.description}</div>` : ''}
+                <div style="color: #888; font-size: 12px; margin-top: 8px;">
+                    Position: [${Math.round(data.lat)}, ${Math.round(data.lng)}]
+                </div>
+                ${isAdminMode ? `<button class="btn-custom btn-delete" onclick="deleteMarker(${data.id})" style="margin-top: 10px; width: 100%;"><i class="fas fa-trash"></i> Löschen</button>` : ''}
+            `;
+
+            marker.bindPopup(popupContent);
+            markerObjects.push({ id: data.id, marker: marker });
+        }
+
+        function deleteMarker(id) {
+            if (confirm('Marker wirklich löschen?')) {
+                markers = markers.filter(m => m.id !== id);
+                const markerObj = markerObjects.find(m => m.id === id);
+                if (markerObj) {
+                    map.removeLayer(markerObj.marker);
+                    markerObjects = markerObjects.filter(m => m.id !== id);
+                }
+                updateMarkerList();
+                saveToLocalStorage();
+            }
+        }
+
+        function clearAllMarkers() {
+            if (confirm('Wirklich ALLE Marker löschen?')) {
+                markerObjects.forEach(obj => map.removeLayer(obj.marker));
+                markers = [];
+                markerObjects = [];
+                updateMarkerList();
+                saveToLocalStorage();
+            }
+        }
+
+        function updateMarkerList() {
+            const container = document.getElementById('markerList');
+            const count = document.getElementById('markerCount');
+            count.textContent = markers.length;
+
+            if (markers.length === 0) {
+                container.innerHTML = '<p style="color: #888; text-align: center; padding: 15px; font-size: 12px;">Keine Marker</p>';
+                return;
+            }
+
+            container.innerHTML = markers.map(m => `
+                <div class="marker-item">
+                    <h5>
+                        ${m.icon} ${m.title}
+                        ${m.hidden ? '<i class="fas fa-lock" style="color: #ffc107; margin-left: 5px;" title="Versteckter Marker"></i>' : ''}
+                    </h5>
+                    <p><i class="fas fa-map-marker-alt"></i> [${Math.round(m.lat)}, ${Math.round(m.lng)}]</p>
+                    ${m.description ? `<p><i class="fas fa-info-circle"></i> ${m.description}</p>` : ''}
+                    ${m.hidden ? `<p style="color: #ffc107; font-size: 11px;"><i class="fas fa-key"></i> Passwort erforderlich</p>` : ''}
+                    <button class="btn-custom btn-delete" onclick="deleteMarker(${m.id})">
+                        <i class="fas fa-trash"></i> Löschen
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // LocalStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('gtaMapMarkers', JSON.stringify(markers));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('gtaMapMarkers');
+            if (saved) {
+                try {
+                    markers = JSON.parse(saved);
+                    // Nur sichtbare Marker laden (versteckte werden erst nach Passwort-Eingabe angezeigt)
+                    markers.forEach(m => {
+                        if (!m.hidden) {
+                            createMarker(m);
+                        }
+                    });
+                    updateMarkerList();
+                } catch (e) {
+                    console.error('Fehler beim Laden:', e);
+                }
+            }
+        }
+
+        function exportMarkers() {
+            const dataStr = JSON.stringify(markers, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const fileName = `gta-map-markers-${new Date().toISOString().split('T')[0]}.json`;
+
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', fileName);
+            link.click();
+
+            alert(`✅ ${markers.length} Marker exportiert!`);
+        }
+
+        function importMarkers() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (confirm(`${imported.length} Marker gefunden. Überschreiben?`)) {
+                            clearAllMarkers();
+                            markers = imported;
+                            markers.forEach(m => createMarker(m));
+                            updateMarkerList();
+                            saveToLocalStorage();
+                            alert('✅ Marker importiert!');
+                        }
+                    } catch (err) {
+                        alert('❌ Fehler: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // Initialisierung
+        initMap();
+        loadFromLocalStorage();
+        console.log('🗺️ GTA 5 Los Santos Map geladen!');
+    </script>
+</body>
+</html>
