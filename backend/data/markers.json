@@ -1637,5 +1637,16 @@
     "hidden": false,
     "password": null,
     "id": 1767199604839
+  },
+  {
+    "lat": -160.3125,
+    "lng": 93.25,
+    "title": "Castigo Kartell",
+    "description": "",
+    "category": "fraktion",
+    "icon": "⚔️",
+    "hidden": false,
+    "password": null,
+    "id": 1768067478463
   }
 ]
