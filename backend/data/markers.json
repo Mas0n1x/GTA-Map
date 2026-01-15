@@ -1529,17 +1529,6 @@
     "id": 1767183598614
   },
   {
-    "lat": -61.25,
-    "lng": 184.90625,
-    "title": "Leuchttrum",
-    "description": "Leuchttrum",
-    "category": "polizei",
-    "icon": "⚓",
-    "hidden": false,
-    "password": null,
-    "id": 1767198570065
-  },
-  {
     "lat": -117.9375,
     "lng": 163.5625,
     "title": "Windräder",
@@ -1648,5 +1637,27 @@
     "hidden": false,
     "password": null,
     "id": 1768067478463
+  },
+  {
+    "lat": -45.65625,
+    "lng": 112.625,
+    "title": "Altes SD",
+    "description": "",
+    "category": "polizei",
+    "icon": "🚔",
+    "hidden": false,
+    "password": null,
+    "id": 1768234351512
+  },
+  {
+    "lat": -61.5,
+    "lng": 183.6875,
+    "title": "Leuchtturm",
+    "description": "",
+    "category": "sonstiges",
+    "icon": "⚓",
+    "hidden": false,
+    "password": null,
+    "id": 1768234554860
   }
 ]
